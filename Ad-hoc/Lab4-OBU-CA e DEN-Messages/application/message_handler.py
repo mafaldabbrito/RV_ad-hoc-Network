@@ -31,24 +31,24 @@ def trigger_ca(node):
 #						n_hops - maximum number of hops that the message can reach
 #						(roi_x, roi_y) 
 #-------------------------------------------------------------------------------------------------
-def trigger_event(node_type, event_number, event_status):
+def trigger_event(node_type, event_number, destination):
 
 	if (node_type == map.obu_node):
 		event_type = app_obu_conf.event_type[event_number]
-		if event_status == app_obu_conf.status[event_number]:
-			rep_interval = app_obu_conf.rep_interval[event_number] 
-			n_hops = app_obu_conf.n_hops[event_number]
-			roi_x  = app_obu_conf.roi_x[event_number] 
-			roi_y  = app_obu_conf.roi_y[event_number]
-			latency = app_obu_conf.latency[event_number]
+		rep_interval = app_obu_conf.rep_interval[event_number] 
+		n_hops = app_obu_conf.n_hops[event_number]
+		roi_x  = app_obu_conf.roi_x[event_number] 
+		roi_y  = app_obu_conf.roi_y[event_number]
+		latency = app_obu_conf.latency[event_number]
 	elif  (node_type == map.rsu_node):
-		if (event_type == app_rsu_conf.event_type[event_number]):
-			rep_interval = app_rsu_conf.rep_interval[event_number] 
-			n_hops = app_rsu_conf.n_hops[event_number]
-			roi_x  = app_rsu_conf.roi_x[event_number] 
-			roi_y  = app_rsu_conf.roi_y[event_number]
-			latency = app_rsu_conf.latency[event_number]
-	event_msg={'event_type': event_type, 'event_status': event_status, 'rep_interval':int(rep_interval), 'n_hops': int(n_hops), 'roi_x':int(roi_x), 'roi_y': int(roi_y), 'latency':int(latency)}
+		event_type = app_rsu_conf.event_type[event_number]
+		rep_interval = app_rsu_conf.rep_interval[event_number] 
+		n_hops = app_rsu_conf.n_hops[event_number]
+		roi_x  = app_rsu_conf.roi_x[event_number] 
+		roi_y  = app_rsu_conf.roi_y[event_number]
+		latency = app_rsu_conf.latency[event_number]
+  
+	event_msg={'event_type': event_type, 'destination': destination, 'rep_interval':int(rep_interval), 'n_hops': int(n_hops), 'roi_x':int(roi_x), 'roi_y': int(roi_y), 'latency':int(latency)}
 	return event_msg
 
 

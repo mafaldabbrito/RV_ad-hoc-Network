@@ -30,6 +30,8 @@ import ITS_maps as maps
 import ITS_options as its_conf
 
 # QUEUES - used to tranfer messages between adjacent layers of the protocol stack
+
+event_specifics = {'type': None, 'destination': None}  # Shared variable to store the event type
 my_system_rxd_queue=Queue()
 movement_control_txd_queue=Queue()
 rsu_control_txd_queue=Queue()
@@ -92,7 +94,7 @@ def main(argv):
 			coordinates = {'x':maps.map[node_id]['x'], 'y':maps.map[node_id]['y'], 't': current_time}
 			node_type = maps.map[node_id]['type']
 			node_sub_type =  maps.map[node_id]['sub_type']
-			if (node_sub_type == 'car') or (node_sub_type == 'tls'):
+			if (node_sub_type == 'car') or (node_sub_type == 'tls') or (node_sub_type == 'parking station'):
 				plus_info = ''
 			else:
 				plus_info=maps.map[node_id]['plus_info']
@@ -105,6 +107,8 @@ def main(argv):
 			else:
 				if (node_sub_type == 'tls'):
 					node_interface={'node_id':node_id, 'type':node_type, 'num_tls': maps.map[node_id]['num_tls'],'tls_group': maps.map[node_id]['tls_groups'], 'movement': maps.map[node_id]['movement'], 'plus_info': plus_info, 'time': current_time }
+				elif (node_sub_type == 'parking station'):
+					node_interface={'node_id':node_id, 'type':node_type, 'plus_info': plus_info, 'time': current_time }
 				else:
 					exit()
 	
@@ -139,7 +143,7 @@ def main(argv):
 			# 			 	start_flag: thread execution control flag
 			#             	services_rxd_queue: queue to get data from ca_service_rxd or den_service_rxd
 			#             	my_system_rxd_queue: queue to send data to my_system that is relevant for business logic decision-process 
-			t=Thread(target=obu_application_rxd, args=(node_interface, start_flag, services_rxd_queue, my_system_rxd_queue,))
+			t=Thread(target=obu_application_rxd, args=(node_interface, start_flag, services_rxd_queue, my_system_rxd_queue,den_service_txd_queue,))
 			t.start()
 			threads.append(t)
 	
@@ -161,7 +165,7 @@ def main(argv):
 			#             	my_system_rxd_queue: queue to send data to my_system that is relevant for business logic decision-process 
 			# 			  	ca_service_txd_queue: queue to send data to ca_services_txd
 			#             	den_service_txd_queue: queue to send data to den_services_txd
-			t=Thread(target=rsu_application_txd, args=(node_interface, start_flag, my_system_rxd_queue, ca_service_txd_queue, den_service_txd_queue, spat_service_txd_queue, ivim_service_txd_queue,))
+			t=Thread(target=rsu_application_txd, args=(node_interface, start_flag, my_system_rxd_queue, ca_service_txd_queue, den_service_txd_queue, event_specifics, spat_service_txd_queue, ivim_service_txd_queue,))
 			t.start()
 			threads.append(t)
 	
@@ -183,6 +187,10 @@ def main(argv):
 			#	   		  	my_system_rxd_queue: queue to receive data from other application layer threads relevant for business logic decision-process 
 			#             	movement_control_txd_queue: queue to send commands to control vehicles movement
 			t=Thread(target=rsu_system, args=(node_interface, start_flag, coordinates, my_system_rxd_queue, rsu_control_txd_queue,))
+			t.start()
+			threads.append(t)
+
+			t = Thread(target=handle_get_request, args=(start_flag, event_specifics))
 			t.start()
 			threads.append(t)
 

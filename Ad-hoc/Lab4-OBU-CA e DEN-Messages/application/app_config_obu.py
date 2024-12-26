@@ -2,7 +2,7 @@
 # #####################################################################################################
 # APP CONFIGURATION PARAMETERS -
 #######################################################################################################
-max_latency = 10000
+max_latency = 100000000
 
 #------------------------------------------------------------------------------------------
 #include here any specific configuration of the application
@@ -26,21 +26,24 @@ safety_distance = 500
 # Definition of the first event (position 0 of the array)
 
 safety_critical = 0
+locking = 1
+unlocking = 2
+sucessful = 3
 # DEN message - Event type
-event_type = ["safety_critical_warning"]
+event_type = ["safety_critical_warning", "locking", "unlocking", "successful"]
 # DEN message - Event status (start | update | stop)
-status = ['start']
+status = ['start', 'start', 'start', 'start']
 #if event_status == 'start':
 #DEN message - repetition interval (0 if single event)
-rep_interval = [0]
+rep_interval = [0,0,0,0]
 # DEN message - Maximum hop number
-n_hops = [8]
+n_hops = [1,1,1,1]
 #DEN message - ROI x coordinates (0 if none)
-roi_x  = [0]
+roi_x  = [0,0,0,0]
 #DEN message - ROI y coordinates (0 if none)
-roi_y  = [0]
+roi_y  = [0,0,0,0]
 #DEN message - ROI y coordinates (0 if none)
-latency = [max_latency]
+latency = [max_latency,max_latency,max_latency,max_latency]
 
 # IMPORTANT TIP: roi, latency are not implemented but can be added.
 # To create a new event, name it and assign the next integer to refer to te event position in the array. 

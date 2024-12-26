@@ -13,6 +13,9 @@ import application.app_config_obu as app_obu_conf
 
 den_txd = threading.Condition()
 
+My_ID = '23093203'
+
+
 #-----------------------------------------------------------------------------------------
 # Thread: application transmission. In this example user triggers CA and DEN messages. 
 #		CA message generation requires the sender identification and the inter-generation time.
@@ -27,19 +30,21 @@ def obu_application_txd(obd_2_interface, start_flag, my_system_rxd_queue, ca_ser
 	while not start_flag.isSet():
 		time.sleep (1)
 	if (app_conf.debug_sys):
-            print('STATUS: Ready to start - THREAD: obu_application_txd - NODE: {}'.format(obd_2_interface["node_id"]),'\n')
+		print('STATUS: Ready to start - THREAD: obu_application_txd - NODE: {}'.format(obd_2_interface["node_id"]),'\n')
 
-	time.sleep(app_obu_conf.warm_up_time)
-	ca_service_txd_queue.put(int(app_rsu_conf.ca_generation_interval))
-	if (app_conf.debug_app_ca):
-		print ('obu_application - ca messsage  triggered with generation interval ', app_obu_conf.ca_generation_interval)
-	with den_txd:
-		den_txd.wait()
-	den_event = trigger_event(map.obu_node, 0, 'start') 
-	den_service_txd_queue.put(den_event)
-	print ('den txd')
-	if (app_conf.debug_app_den):
-		print ('obu_application_txd - den messsage sent ', den_event)	
+	# time.sleep(app_obu_conf.warm_up_time)
+	# ca_service_txd_queue.put(int(app_rsu_conf.ca_generation_interval))
+	# if (app_conf.debug_app_ca):
+	# 	print ('obu_application - ca messsage  triggered with generation interval ', app_obu_conf.ca_generation_interval)
+	while True :	
+		with den_txd:
+			den_txd.wait()
+		# Sucess message
+		den_event = trigger_event(map.obu_node, 3, My_ID) 
+		den_service_txd_queue.put(den_event)
+		print ('den txd')
+		if (app_conf.debug_app_den):
+			print ('obu_application_txd - den messsage sent ', den_event)	
 
 
 
@@ -53,24 +58,22 @@ def obu_application_txd(obd_2_interface, start_flag, my_system_rxd_queue, ca_ser
 #       		the den_service_txd_queue so that the node can relay the DEN message. 
 # 				Do not forget to this also at IST_core.py
 #-----------------------------------------------------------------------------------------
-def obu_application_rxd(obd_2_interface, start_flag, services_rxd_queue, my_system_rxd_queue):
+def obu_application_rxd(obd_2_interface, start_flag, services_rxd_queue, my_system_rxd_queue, den_service_txd_queue):
 
 	while not start_flag.isSet():
 		time.sleep (1)
 	if (app_conf.debug_sys):
-          print('STATUS: Ready to start - THREAD: obu_application_rxd - NODE: {}'.format(obd_2_interface["node_id"]),'\n')
+		print('STATUS: Ready to start - THREAD: obu_application_rxd - NODE: {}'.format(obd_2_interface["node_id"]),'\n')
     
-	while True :
+	while True :	
 		msg_rxd=services_rxd_queue.get()
-		if (msg_rxd['msg_type']=="CA") and (obd_2_interface['node_id'] != msg_rxd['node']):
-			if (app_conf.debug_app_ca):
-				print ('\n....>obu_application_rxd - ca messsage received ',msg_rxd)
-			my_system_rxd_queue.put(msg_rxd)
-		elif (msg_rxd['msg_type']=="DEN") and (obd_2_interface['node_id'] != msg_rxd['node']):
+		if (msg_rxd['msg_type']=="DEN") and (obd_2_interface['node_id'] != msg_rxd['node'] and msg_rxd['event']['destination'] == My_ID):
 			if (app_conf.debug_app_den):
 				print ('\n....>obu_application_rxd - den messsage received ',msg_rxd)
-			my_system_rxd_queue.put(msg_rxd)
-          
+			print('Received DEN message of type ', msg_rxd['event']['event_type'])
+			with den_txd:
+				den_txd.notify()
+			print('Ready to send success message')
 #-----------------------------------------------------------------------------------------
 # Thread: my_system - car remote control (test of the functions needed to control your car)
 # The car implements a finite state machine. This means that the commands must be executed in the right other.
@@ -84,38 +87,39 @@ def obu_system(obd_2_interface, start_flag, coordinates, my_system_rxd_queue, mo
 	while not start_flag.isSet():
 		time.sleep (1)
 	if (app_conf.debug_sys):
-          print('STATUS: Ready to start - THREAD: application_rxd - NODE: {}'.format(obd_2_interface["node_id"]),'\n')
+		print('STATUS: Ready to start - THREAD: application_rxd - NODE: {}'.format(obd_2_interface["node_id"]),'\n')
     
-	open_car(movement_control_txd_queue)
-	turn_on_car(movement_control_txd_queue)
-	car_move_forward(movement_control_txd_queue)
+	# open_car(movement_control_txd_queue)
+	# turn_on_car(movement_control_txd_queue)
+	# car_move_forward(movement_control_txd_queue)
 
 	while True :
 		msg_rxd=my_system_rxd_queue.get()
-		if (msg_rxd['msg_type']=='CA'):
-			x = msg_rxd['pos_x']
-			y = msg_rxd['pos_y']
-			my_x = coordinates['x']
-			my_y = coordinates['y']
-			distance = math.sqrt((x - my_x) ** 2 + (y - my_y) ** 2)
-			if (distance <= app_obu_conf.safety_distance) and (distance > app_obu_conf.emergency_distance):
-				if (app_conf.debug_app) or (app_conf.debug_obu):
-					print ('\nObu_system: safety: distance ', int(distance), 'safety distance ', app_obu_conf.safety_distance, 'emergency ', app_obu_conf.emergency_distance)
-				car_move_slower(movement_control_txd_queue)
-			if (distance <= app_obu_conf.emergency_distance):
-				if (app_conf.debug_app) or (app_conf.debug_obu):
-					print ('\nObu_system: emergency: distance ', int(distance), 'safety distance ', app_obu_conf.safety_distance, 'emergency ', app_obu_conf.emergency_distance)
-				car_move_very_slow(movement_control_txd_queue)
-			if (distance <= app_obu_conf.crash_iminent):
-				print ('\nObu_system: ominent crash distance ', int(distance), 'safety distance ', app_obu_conf.safety_distance, 'emergency ', app_obu_conf.emergency_distance)
-				stop_car(movement_control_txd_queue)
-				with den_txd:
-					den_txd.notify()
-		if (msg_rxd['msg_type']=='DEN'):
-			if (app_conf.debug_app) or (app_conf.debug_obu):
-				print ('\nObu_system: other vehicle detected iminent crash: distance ', int(distance), 'safety distance ', app_obu_conf.safety_distance, 'emergency ', app_obu_conf.emergency_distance)
-			car_move_slower(movement_control_txd_queue)
-			stop_car(movement_control_txd_queue)
+		print('obu_system - message received ', msg_rxd)
+		# if (msg_rxd['msg_type']=='CA'):
+		# 	x = msg_rxd['pos_x']
+		# 	y = msg_rxd['pos_y']
+		# 	my_x = coordinates['x']
+		# 	my_y = coordinates['y']
+		# 	distance = math.sqrt((x - my_x) ** 2 + (y - my_y) ** 2)
+		# 	if (distance <= app_obu_conf.safety_distance) and (distance > app_obu_conf.emergency_distance):
+		# 		if (app_conf.debug_app) or (app_conf.debug_obu):
+		# 			print ('\nObu_system: safety: distance ', int(distance), 'safety distance ', app_obu_conf.safety_distance, 'emergency ', app_obu_conf.emergency_distance)
+		# 		car_move_slower(movement_control_txd_queue)
+		# 	if (distance <= app_obu_conf.emergency_distance):
+		# 		if (app_conf.debug_app) or (app_conf.debug_obu):
+		# 			print ('\nObu_system: emergency: distance ', int(distance), 'safety distance ', app_obu_conf.safety_distance, 'emergency ', app_obu_conf.emergency_distance)
+		# 		car_move_very_slow(movement_control_txd_queue)
+		# 	if (distance <= app_obu_conf.crash_iminent):
+		# 		print ('\nObu_system: ominent crash distance ', int(distance), 'safety distance ', app_obu_conf.safety_distance, 'emergency ', app_obu_conf.emergency_distance)
+		# 		stop_car(movement_control_txd_queue)
+		# 		with den_txd:
+		# 			den_txd.notify()
+		# if (msg_rxd['msg_type']=='DEN'):
+		# 	if (app_conf.debug_app) or (app_conf.debug_obu):
+		# 		print ('\nObu_system: other vehicle detected iminent crash: distance ', int(distance), 'safety distance ', app_obu_conf.safety_distance, 'emergency ', app_obu_conf.emergency_distance)
+		# 	# car_move_slower(movement_control_txd_queue)
+		# 	# stop_car(movement_control_txd_queue)
 
 
 

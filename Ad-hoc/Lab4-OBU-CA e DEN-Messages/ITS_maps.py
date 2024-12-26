@@ -15,7 +15,8 @@ au_node = 3
 # Node sub_types
 #------------------------------------------------
 # RSU : 'tls' | 'toll' | 'park_entry' | <other...>
-rsu_sub_type = 'tls'
+rsu_sub_type1 = 'tls'
+rsu_sub_type2 = 'parking station'
 # OBU : 'car' | 'truck' | 'police' | 'emergency' | 'bus' | 'bike' | <other...>
 obu_sub_type1 = 'car'
 obu_sub_type2 = 'emergency'
@@ -50,8 +51,8 @@ au_range = 1000
 #------------------------------------------------
 # Virtual map
 # ------------------------------------------------
-map = {"6":{'type':  obu_node,  'sub_type': obu_sub_type1, 'x':   25,  'y': 1000,    'speed':100,   'direction':'f',  'heading':'S',  'status': 'inactive'},
-       "7":{'type':  obu_node,  'sub_type': obu_sub_type1, 'x':   25,  'y':-1000,    'speed':100,   'direction':'f',  'heading':'N',  'status': 'inactive'}
+map = {"6":{'type':  rsu_node,  'sub_type': rsu_sub_type2, 'x':   25,  'y': 1000,    'speed':0,   'direction':'f',  'heading':'S',  'status': 'inactive'},
+       "7":{'type':  obu_node,  'sub_type': obu_sub_type1, 'x':   25,  'y':-1000,    'speed':0,   'direction':'f',  'heading':'N',  'status': 'inactive'}
       }
 
 

@@ -104,21 +104,23 @@ ivim_latency = 3600
 
 
 safety_critical = 0
+locking = 1
+unlocking = 2
 # DEN message - Event type
-event_type = ["safety_critical_warning"]
+event_type = ["safety_critical_warning", "locking", "unlocking"]
 # DEN message - Event status (start | update | stop)
-event_status = ['start']
+event_status = ['start', 'start', 'start']
 #if event_status == 'start':
 #DEN message - repetition interval (0 if single event)
-rep_interval = [0]
+rep_interval = [0,0,0]
 # DEN message - Maximum hop number
-n_hops = [8]
+n_hops = [8,8,8]
 #DEN message - ROI x coordinates (0 if none)
-roi_x  = [0]
+roi_x  = [0,0,0]
 #DEN message - ROI y coordinates (0 if none)
-roi_y  = [0]
+roi_y  = [0,0,0]
 #DEN message - ROI y coordinates (0 if none)
-latency = 3600
+latency = [1000000,10000000,10000000]
 
  
 
