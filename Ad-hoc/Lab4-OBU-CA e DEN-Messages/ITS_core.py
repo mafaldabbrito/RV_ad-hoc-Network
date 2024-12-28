@@ -18,6 +18,7 @@ from facilities.common_services import *
 from application.obu_application import *
 from application.rsu_application import *
 from application.au_application import *
+from application.app_config import local_test
 
 # OBU-interface with vehicles - it may include: car motor control funtions, other sensors/actuator interfaces, location information
 from in_vehicle_network.car_control import *
@@ -28,10 +29,15 @@ from rsu_legacy_systems.rsu_control import *
 # Physical map representation and nodes used.
 import ITS_maps as maps
 import ITS_options as its_conf
-
+#from read_RFID import *
+from rsu_requests import *
 # QUEUES - used to tranfer messages between adjacent layers of the protocol stack
 
 event_specifics = {'type': None, 'destination': None}  # Shared variable to store the event type
+# Create two queues for the processing pipeline of http requests
+in_queue = Queue()
+out_queue = Queue()
+
 my_system_rxd_queue=Queue()
 movement_control_txd_queue=Queue()
 rsu_control_txd_queue=Queue()
@@ -190,9 +196,28 @@ def main(argv):
 			t.start()
 			threads.append(t)
 
-			t = Thread(target=handle_get_request, args=(start_flag, event_specifics))
+			# #Example of a thread that sends a GET request to the server
+			# t = Thread(target=handle_get_request, args=(start_flag, event_specifics))
+			# t.start()
+			# threads.append(t)
+   
+			t= Thread(target=in_comm_thread,args=(its_conf.GET_URL, in_queue, start_flag))
 			t.start()
 			threads.append(t)
+
+			t= Thread(target=out_comm_thread,args=(its_conf.POST_URL, out_queue, start_flag))
+			t.start()
+			threads.append(t)
+   
+			t= Thread(target=processing_thread,args = (in_queue, out_queue, start_flag, event_specifics))
+			t.start()
+			threads.append(t)
+   
+			# RFID scanning
+			if (local_test == 0):
+				t = Thread(target=scan_rfid, daemon=True)
+				t.start()
+				threads.append(t)
 
 		if (node_type==maps.au_node):
 			# Thread -    	au_application_txd: create and send messages from the AU to other nodess

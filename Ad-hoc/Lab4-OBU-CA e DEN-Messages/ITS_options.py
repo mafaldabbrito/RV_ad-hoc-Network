@@ -67,3 +67,18 @@ range_scale = 0.8
 drop_threshold = 2
 
 
+
+rsu_id = 1 # RSU ID (replace with actual ID)
+
+
+##############################
+#  HTTP requests parameters  #
+##############################
+
+LOCKED_DEVICES_URL = "http://127.0.0.1:5000/api/locked-devices"  # URL to fetch locked devices
+REPORT_THEFT_URL = "http://127.0.0.1:5000/api/report-theft"      # URL to report theft 
+
+GET_URL = "http://193.236.214.159:8080/get_command/1"  # URL to fetch commands 
+POST_URL = "http://193.236.214.159:8080/post_command/1"     # URL to send commands
+
+
